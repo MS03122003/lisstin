@@ -18,6 +18,7 @@ export default Home;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#fff",
   },
   content: {
     flex: 1,
@@ -27,5 +28,6 @@ const styles = StyleSheet.create({
   text: {
     fontSize: 20,
     fontWeight: "600",
+    color: "#333",
   },
 });

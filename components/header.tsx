@@ -10,12 +10,12 @@ import {
   Dimensions,
 } from "react-native";
 import { Ionicons, Feather } from "@expo/vector-icons";
-
-const { width } = Dimensions.get("window");
+import { useNavigation } from "@react-navigation/native";
 
 const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [slideAnim] = useState(new Animated.Value(-250)); // Start off-screen
+  const [slideAnim] = useState(new Animated.Value(-250));
+  const navigation = useNavigation();
 
   const toggleMenu = () => {
     if (menuOpen) {
@@ -42,6 +42,11 @@ const Header = () => {
       duration: 300,
       useNativeDriver: true,
     }).start(() => setMenuOpen(false));
+  };
+
+  const navigateTo = (screen: string) => {
+    closeMenu();
+    navigation.navigate(screen as never);
   };
 
   return (
@@ -85,28 +90,10 @@ const Header = () => {
             </TouchableOpacity>
           </View>
 
+          {/* Menu Items */}
           <TouchableOpacity
             style={styles.menuItem}
-            onPress={() => {
-              closeMenu();
-              alert("My Account");
-            }}
-          >
-            <Ionicons
-              name="person-outline"
-              size={20}
-              color="#333"
-              style={styles.menuIcon}
-            />
-            <Text style={styles.menuText}>My Account</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => {
-              closeMenu();
-              alert("Expense");
-            }}
+            onPress={() => navigateTo("Expense")}
           >
             <Ionicons
               name="wallet-outline"
@@ -119,10 +106,20 @@ const Header = () => {
 
           <TouchableOpacity
             style={styles.menuItem}
-            onPress={() => {
-              closeMenu();
-              alert("Upcoming Payment");
-            }}
+            onPress={() => navigateTo("Goal")}
+          >
+            <Ionicons
+              name="flag-outline"
+              size={20}
+              color="#333"
+              style={styles.menuIcon}
+            />
+            <Text style={styles.menuText}>Goal Simulator</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => navigateTo("Payment")}
           >
             <Ionicons
               name="calendar-outline"
@@ -135,18 +132,28 @@ const Header = () => {
 
           <TouchableOpacity
             style={styles.menuItem}
-            onPress={() => {
-              closeMenu();
-              alert("Logout");
-            }}
+            onPress={() => navigateTo("Insight")}
           >
             <Ionicons
-              name="log-out-outline"
+              name="analytics-outline"
               size={20}
               color="#333"
               style={styles.menuIcon}
             />
-            <Text style={styles.menuText}>Logout</Text>
+            <Text style={styles.menuText}>Insights</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => navigateTo("Account")}
+          >
+            <Ionicons
+              name="person-outline"
+              size={20}
+              color="#333"
+              style={styles.menuIcon}
+            />
+            <Text style={styles.menuText}>My Account</Text>
           </TouchableOpacity>
         </Animated.View>
       )}
@@ -158,7 +165,7 @@ export default Header;
 
 const styles = StyleSheet.create({
   wrapper: {
-    backgroundColor: "#f8f8f8",
+    backgroundColor: "#a9a5a5ff",
     elevation: 3,
     zIndex: 1000,
   },
@@ -169,7 +176,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 20,
-    backgroundColor: "#f8f8f8",
+    backgroundColor: "#8e8c8cff",
   },
   leftSection: {
     flexDirection: "row",
