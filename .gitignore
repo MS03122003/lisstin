@@ -37,3 +37,11 @@ yarn-error.*
 *.tsbuildinfo
 
 app-example
+.env
+# React Native
+app2
+*.env
+# React Native specific
+serviceAccountKey.json
+ServiceAccount.json
+credintials.json
