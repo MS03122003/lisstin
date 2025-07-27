@@ -403,7 +403,7 @@ const FiMcpCode = () => {
         {/* Footer */}
         <View style={styles.footer}>
           <Text style={styles.footerText}>
-            Don't have a FI-MCP code? Contact your financial institution
+             Don't have a FI-MCP code? Contact your financial institution
           </Text>
         </View>
       </KeyboardAvoidingView>

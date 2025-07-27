@@ -107,11 +107,11 @@ export default function TabLayout() {
 
 
       <Tabs.Screen
-        name="learning"
+        name="call_ai"
         options={{
-          title: 'Learn',
+          title: 'Call AI',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="school-outline" size={size} color={color} />
+            <Ionicons name="call-outline" size={size} color={color} />
           ),
           headerShown: false,
         }}

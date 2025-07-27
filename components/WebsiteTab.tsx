@@ -15,7 +15,7 @@ const WebsiteTab = () => {
     <SafeAreaView style={styles.container}>
       {/* WebView - Takes up entire screen */}
       <WebView
-        source={{ uri: "https://www.google.com/" }} // Replace with your website URL
+        source={{ uri: "https://lisstin.com" }} // Replace with your website URL
         style={styles.webview}
         onLoadStart={() => setLoading(true)}
         onLoadEnd={() => setLoading(false)}

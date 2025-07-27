@@ -1,7 +1,7 @@
 import Constants from 'expo-constants';
 
 // Get API base URL from app config or use default
-const API_BASE_URL = Constants.expoConfig?.extra?.apiBaseUrl || 'http://192.168.137.183:5000/api';
+const API_BASE_URL = Constants.expoConfig?.extra?.apiBaseUrl || 'http://10.71.204.70:5000/api';
 
 console.log('API_BASE_URL configured:', API_BASE_URL);
 

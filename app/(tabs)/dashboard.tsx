@@ -1,7 +1,6 @@
-// app/(tabs)/dashboard.tsx
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import React, { useState, useEffect } from 'react';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
 import {
   Dimensions,
   RefreshControl,
@@ -11,21 +10,17 @@ import {
   Text,
   TouchableOpacity,
   View,
-  Alert,
 } from 'react-native';
 import Svg, { Circle, Path, Text as SvgText } from 'react-native-svg';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get('window');
 
 const Dashboard = () => {
   const router = useRouter();
-  const { fiConnected } = useLocalSearchParams();
   const [refreshing, setRefreshing] = useState(false);
-  const [currentBalance, setCurrentBalance] = useState(25750);
+  const [currentBalance, setCurrentBalance] = useState(30000);
   const [monthlyBudget, setBudgetRemaining] = useState(15000);
   const [isConnected, setIsConnected] = useState(false);
-  const [balanceVisible, setBalanceVisible] = useState(true);
   
   // Sample data - would come from your API/store
   const [categoryData, setCategoryData] = useState({
@@ -48,35 +43,109 @@ const Dashboard = () => {
     { id: 4, title: 'Learning Champion', icon: '📚', unlocked: false },
   ]);
 
-  // Load Fi Money connection status from storage
-  useEffect(() => {
-    loadFiConnectionStatus();
-  }, []);
+  // Calculate fuel left (days remaining)
+  const calculateFuelLeft = () => {
+    const totalMonthlyExpense = categoryData.wants.amount + categoryData.needs.amount + categoryData.desires.amount;
+    const dailyExpense = totalMonthlyExpense / 30; // Assuming 30 days in a month
+    const daysLeft = Math.floor(currentBalance / dailyExpense);
+    
+    return {
+      days: daysLeft,
+      dailyBurn: dailyExpense,
+      fuelLevel: Math.min((daysLeft / 30) * 100, 100) // Percentage based on 30 days max
+    };
+  };
 
-  // Handle route params for Fi connection
-  useEffect(() => {
-    if (fiConnected === 'true') {
-      setIsConnected(true);
-      saveFiConnectionStatus(true);
-    }
-  }, [fiConnected]);
+  const fuelData = calculateFuelLeft();
 
-  const loadFiConnectionStatus = async () => {
-    try {
-      const status = await AsyncStorage.getItem('fiMoneyConnected');
-      if (status === 'true') {
-        setIsConnected(true);
-      }
-    } catch (error) {
-      console.log('Error loading Fi connection status:', error);
+  // Function to get fuel status color and message
+  const getFuelStatus = (days) => {
+    if (days >= 45) {
+      return {
+        color: '#10B981',
+        status: 'Excellent',
+        message: 'Financial fuel tank is full! 🚀',
+        icon: 'battery-full'
+      };
+    } else if (days >= 30) {
+      return {
+        color: '#e34c00',
+        status: 'Good',
+        message: 'Steady financial cruise mode ⛽',
+        icon: 'battery-half'
+      };
+    } else if (days >= 15) {
+      return {
+        color: '#FF9500',
+        status: 'Moderate',
+        message: 'Time to refuel soon 🔔',
+        icon: 'battery-dead'
+      };
+    } else if (days >= 7) {
+      return {
+        color: '#FF6B6B',
+        status: 'Low',
+        message: 'Running on financial reserves! ⚠️',
+        icon: 'warning'
+      };
+    } else {
+      return {
+        color: '#FF4444',
+        status: 'Critical',
+        message: 'Emergency fuel mode activated! 🚨',
+        icon: 'alert-circle'
+      };
     }
   };
 
-  const saveFiConnectionStatus = async (status: boolean) => {
-    try {
-      await AsyncStorage.setItem('fiMoneyConnected', status.toString());
-    } catch (error) {
-      console.log('Error saving Fi connection status:', error);
+  const fuelStatus = getFuelStatus(fuelData.days);
+
+  // Function to generate witty statements based on balance
+  const getWittyStatement = (balance, monthlyBudget) => {
+    const budgetRatio = balance / monthlyBudget;
+    
+    if (balance >= 50000) {
+      return {
+        text: "Absolutely loaded and gloriously rich! 💎",
+        emoji: "🤑",
+        color: "#FFD700",
+        fontSize: budgetRatio >= 3 ? 18 : budgetRatio >= 2 ? 16 : 15
+      };
+    } else if (balance >= 30000) {
+      return {
+        text: "Comfortably stable and financially fabulous! 🌟",
+        emoji: "😎",
+        color: "#e34c00",
+        fontSize: budgetRatio >= 2.5 ? 16 : budgetRatio >= 1.5 ? 15 : 14
+      };
+    } else if (balance >= 15000) {
+      return {
+        text: "Decent, balanced, and adequately surviving! 📊",
+        emoji: "🙂",
+        color: "#45B7D1",
+        fontSize: budgetRatio >= 1.5 ? 15 : budgetRatio >= 1 ? 14 : 13
+      };
+    } else if (balance >= 5000) {
+      return {
+        text: "Tight, stretched, but cautiously optimistic! ⚠",
+        emoji: "😅",
+        color: "#FF9500",
+        fontSize: budgetRatio >= 0.8 ? 14 : budgetRatio >= 0.5 ? 13 : 12
+      };
+    } else if (balance >= 1000) {
+      return {
+        text: "Alarmingly low but nervously surviving! 🚨",
+        emoji: "😰",
+        color: "#FF6B6B",
+        fontSize: budgetRatio >= 0.3 ? 13 : budgetRatio >= 0.1 ? 12 : 11
+      };
+    } else {
+      return {
+        text: "Completely broke but hilariously optimistic! 💸",
+        emoji: "😭",
+        color: "#FF4444",
+        fontSize: budgetRatio >= 0.05 ? 12 : 10
+      };
     }
   };
 
@@ -88,46 +157,12 @@ const Dashboard = () => {
     }, 1000);
   };
 
-  const toggleBalanceVisibility = () => {
-    setBalanceVisible(!balanceVisible);
-  };
-
   const handleFiMoneyConnect = () => {
     if (isConnected) {
-      Alert.alert(
-        'Fi Money MCP',
-        'Choose an action:',
-        [
-          {
-            text: 'Settings',
-            onPress: () => router.push('/fi/settings'),
-          },
-          {
-            text: 'Disconnect',
-            style: 'destructive',
-            onPress: () => {
-              Alert.alert(
-                'Disconnect Fi Money',
-                'Are you sure you want to disconnect your Fi Money account?',
-                [
-                  { text: 'Cancel', style: 'cancel' },
-                  {
-                    text: 'Disconnect',
-                    style: 'destructive',
-                    onPress: () => {
-                      setIsConnected(false);
-                      saveFiConnectionStatus(false);
-                    },
-                  },
-                ]
-              );
-            },
-          },
-          { text: 'Cancel', style: 'cancel' },
-        ]
-      );
+      // Navigate to Fi money management or settings
+      router.push('/(tabs)/dashboard');
     } else {
-      // Navigate to Fi MCP code entry
+      // Initiate connection process
       router.push('/fi/fi-mcp-code');
     }
   };
@@ -138,24 +173,32 @@ const Dashboard = () => {
     const centerX = 80;
     const centerY = 80;
     
+    // Calculate angles for each segment
     const wantsAngle = (categoryData.wants.amount / total) * 360;
     const needsAngle = (categoryData.needs.amount / total) * 360;
     const desiresAngle = (categoryData.desires.amount / total) * 360;
 
     return (
       <Svg width="160" height="160">
+        {/* Wants segment */}
         <Path
           d={`M ${centerX} ${centerY} L ${centerX} ${centerY - radius} A ${radius} ${radius} 0 ${wantsAngle > 180 ? 1 : 0} 1 ${centerX + radius * Math.sin((wantsAngle * Math.PI) / 180)} ${centerY - radius * Math.cos((wantsAngle * Math.PI) / 180)} Z`}
           fill={categoryData.wants.color}
         />
+        
+        {/* Needs segment */}
         <Path
           d={`M ${centerX} ${centerY} L ${centerX + radius * Math.sin((wantsAngle * Math.PI) / 180)} ${centerY - radius * Math.cos((wantsAngle * Math.PI) / 180)} A ${radius} ${radius} 0 ${needsAngle > 180 ? 1 : 0} 1 ${centerX + radius * Math.sin(((wantsAngle + needsAngle) * Math.PI) / 180)} ${centerY - radius * Math.cos(((wantsAngle + needsAngle) * Math.PI) / 180)} Z`}
           fill={categoryData.needs.color}
         />
+        
+        {/* Desires segment */}
         <Path
           d={`M ${centerX} ${centerY} L ${centerX + radius * Math.sin(((wantsAngle + needsAngle) * Math.PI) / 180)} ${centerY - radius * Math.cos(((wantsAngle + needsAngle) * Math.PI) / 180)} A ${radius} ${radius} 0 ${desiresAngle > 180 ? 1 : 0} 1 ${centerX} ${centerY - radius} Z`}
           fill={categoryData.desires.color}
         />
+        
+        {/* Center circle */}
         <Circle cx={centerX} cy={centerY} r="25" fill="#1A202C" />
         <SvgText x={centerX} y={centerY + 5} fontSize="12" fill="#FFFFFF" textAnchor="middle" fontWeight="bold">
           Total
@@ -164,9 +207,7 @@ const Dashboard = () => {
     );
   };
 
-  const formatHiddenBalance = (amount: number) => {
-    return '₹' + '•'.repeat(amount.toString().length);
-  };
+  const wittyStatement = getWittyStatement(currentBalance, monthlyBudget);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -189,30 +230,121 @@ const Dashboard = () => {
           </TouchableOpacity>
         </View>
 
+        {/* Fuel Left Card */}
+        <View style={[styles.fuelCard, { borderLeftColor: fuelStatus.color }]}>
+          <View style={styles.fuelHeader}>
+            <View style={styles.fuelTitleContainer}>
+              <Ionicons name={fuelStatus.icon} size={24} color={fuelStatus.color} />
+              <Text style={styles.fuelTitle}>Fuel Left</Text>
+            </View>
+            <View style={[styles.fuelStatusBadge, { backgroundColor: fuelStatus.color }]}>
+              <Text style={styles.fuelStatusText}>{fuelStatus.status}</Text>
+            </View>
+          </View>
+
+          <View style={styles.fuelMainContent}>
+            <View style={styles.fuelDaysContainer}>
+              <Text style={styles.fuelDaysNumber}>{fuelData.days}</Text>
+              <Text style={styles.fuelDaysLabel}>Days</Text>
+            </View>
+            
+            <View style={styles.fuelGaugeContainer}>
+              <View style={styles.fuelGaugeBackground}>
+                <View 
+                  style={[
+                    styles.fuelGaugeFill, 
+                    { 
+                      width: `${Math.min(fuelData.fuelLevel, 100)}%`,
+                      backgroundColor: fuelStatus.color 
+                    }
+                  ]} 
+                />
+              </View>
+              <Text style={styles.fuelPercentage}>{Math.round(fuelData.fuelLevel)}%</Text>
+            </View>
+          </View>
+
+          <View style={styles.fuelDetails}>
+            <Text style={styles.fuelMessage}>{fuelStatus.message}</Text>
+            <View style={styles.fuelMetrics}>
+              <View style={styles.fuelMetric}>
+                <Ionicons name="trending-down" size={16} color="#A0AEC0" />
+                <Text style={styles.fuelMetricText}>
+                  ₹{Math.round(fuelData.dailyBurn).toLocaleString()}/day burn rate
+                </Text>
+              </View>
+              <View style={styles.fuelMetric}>
+                <Ionicons name="calendar" size={16} color="#A0AEC0" />
+                <Text style={styles.fuelMetricText}>
+                  Until {new Date(Date.now() + fuelData.days * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          <TouchableOpacity style={styles.fuelActionButton}>
+            <Text style={[styles.fuelActionText, { color: fuelStatus.color }]}>
+              Optimize Spending
+            </Text>
+            <Ionicons name="chevron-forward" size={16} color={fuelStatus.color} />
+          </TouchableOpacity>
+        </View>
+        {/* Witty Financial Status Box */}
+        <View style={[styles.wittyStatusCard, { borderLeftColor: wittyStatement.color }]}>
+          <View style={styles.wittyStatusHeader}>
+            <Text style={styles.wittyStatusEmoji}>{wittyStatement.emoji}</Text>
+            <View style={styles.wittyStatusTitleContainer}>
+              <Text style={styles.wittyStatusTitle}>Financial Status Report</Text>
+              <View style={[styles.wittyStatusIndicator, { backgroundColor: wittyStatement.color }]} />
+            </View>
+          </View>
+          <Text style={[styles.wittyStatusText, { fontSize: wittyStatement.fontSize }]}>
+            {wittyStatement.text}
+          </Text>
+          <TouchableOpacity style={styles.wittyStatusButton}>
+            <Text style={[styles.wittyStatusButtonText, { color: wittyStatement.color }]}>
+              Get Financial Advice
+            </Text>
+            <Ionicons name="arrow-forward" size={16} color={wittyStatement.color} />
+          </TouchableOpacity>
+        </View>
+
         {/* Balance Card */}
         <View style={styles.balanceCard}>
           <View style={styles.balanceHeader}>
             <Text style={styles.balanceLabel}>Current Balance</Text>
-            <TouchableOpacity onPress={toggleBalanceVisibility}>
-              <Ionicons 
-                name={balanceVisible ? "eye-outline" : "eye-off-outline"} 
-                size={20} 
-                color="#A0AEC0" 
-              />
+            <TouchableOpacity>
+              <Ionicons name="eye-outline" size={20} color="#A0AEC0" />
             </TouchableOpacity>
           </View>
-          <Text style={styles.balanceAmount}>
-            {balanceVisible ? `₹${currentBalance.toLocaleString()}` : formatHiddenBalance(currentBalance)}
-          </Text>
+          <Text style={styles.balanceAmount}>₹{currentBalance.toLocaleString()}</Text>
           <View style={styles.budgetRow}>
-            <Text style={styles.budgetText}>
-              Monthly Budget: {balanceVisible ? `₹${monthlyBudget.toLocaleString()}` : formatHiddenBalance(monthlyBudget)}
-            </Text>
+            <Text style={styles.budgetText}>Monthly Budget: ₹{monthlyBudget.toLocaleString()}</Text>
             <View style={styles.budgetIndicator}>
               <View style={[styles.budgetBar, { width: '65%' }]} />
             </View>
           </View>
         </View>
+
+        {/* Witty Financial Status Box */}
+        {/* <View style={[styles.wittyStatusCard, { borderLeftColor: wittyStatement.color }]}>
+          <View style={styles.wittyStatusHeader}>
+            <Text style={styles.wittyStatusEmoji}>{wittyStatement.emoji}</Text>
+            <View style={styles.wittyStatusTitleContainer}>
+              <Text style={styles.wittyStatusTitle}>Financial Status Report</Text>
+              <View style={[styles.wittyStatusIndicator, { backgroundColor: wittyStatement.color }]} />
+            </View>
+          </View>
+          <Text style={[styles.wittyStatusText, { fontSize: wittyStatement.fontSize }]}>
+            {wittyStatement.text}
+          </Text>
+          <TouchableOpacity style={styles.wittyStatusButton}>
+            <Text style={[styles.wittyStatusButtonText, { color: wittyStatement.color }]}>
+              Get Financial Advice
+            </Text>
+            <Ionicons name="arrow-forward" size={16} color={wittyStatement.color} />
+          </TouchableOpacity>
+        </View> */}
 
         {/* Fi Money MCP Connection */}
         <TouchableOpacity style={[
@@ -297,7 +429,7 @@ const Dashboard = () => {
         </TouchableOpacity>
 
         {/* Quick Actions */}
-        <View style={styles.quickActionsContainer}>
+         <View style={styles.quickActionsContainer}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           <View style={styles.quickActionsRow}>
             <TouchableOpacity 
@@ -332,7 +464,7 @@ const Dashboard = () => {
 
             <TouchableOpacity 
               style={styles.quickActionButton}
-              onPress={() => router.push('/(tabs)/learning')}
+              onPress={() => router.push('/learning/learning')}
             >
               <View style={[styles.quickActionIcon, { backgroundColor: '#FFD700' }]}>
                 <Ionicons name="school" size={24} color="#FFFFFF" />
@@ -361,9 +493,7 @@ const Dashboard = () => {
                 <View style={[styles.legendDot, { backgroundColor: categoryData.wants.color }]} />
                 <View style={styles.legendTextContainer}>
                   <Text style={styles.legendCategory}>Wants</Text>
-                  <Text style={styles.legendAmount}>
-                    {balanceVisible ? `₹${categoryData.wants.amount.toLocaleString()}` : '₹••••••'}
-                  </Text>
+                  <Text style={styles.legendAmount}>₹{categoryData.wants.amount.toLocaleString()}</Text>
                 </View>
                 <Text style={styles.legendPercentage}>{categoryData.wants.percentage}%</Text>
               </View>
@@ -372,9 +502,7 @@ const Dashboard = () => {
                 <View style={[styles.legendDot, { backgroundColor: categoryData.needs.color }]} />
                 <View style={styles.legendTextContainer}>
                   <Text style={styles.legendCategory}>Needs</Text>
-                  <Text style={styles.legendAmount}>
-                    {balanceVisible ? `₹${categoryData.needs.amount.toLocaleString()}` : '₹••••••'}
-                  </Text>
+                  <Text style={styles.legendAmount}>₹{categoryData.needs.amount.toLocaleString()}</Text>
                 </View>
                 <Text style={styles.legendPercentage}>{categoryData.needs.percentage}%</Text>
               </View>
@@ -383,9 +511,7 @@ const Dashboard = () => {
                 <View style={[styles.legendDot, { backgroundColor: categoryData.desires.color }]} />
                 <View style={styles.legendTextContainer}>
                   <Text style={styles.legendCategory}>Desires</Text>
-                  <Text style={styles.legendAmount}>
-                    {balanceVisible ? `₹${categoryData.desires.amount.toLocaleString()}` : '₹••••••'}
-                  </Text>
+                  <Text style={styles.legendAmount}>₹{categoryData.desires.amount.toLocaleString()}</Text>
                 </View>
                 <Text style={styles.legendPercentage}>{categoryData.desires.percentage}%</Text>
               </View>
@@ -424,10 +550,7 @@ const Dashboard = () => {
                 styles.transactionAmount,
                 { color: transaction.amount > 0 ? '#e34c00' : '#FF6B6B' }
               ]}>
-                {balanceVisible 
-                  ? `${transaction.amount > 0 ? '+' : ''}₹${Math.abs(transaction.amount).toLocaleString()}`
-                  : '₹••••'
-                }
+                {transaction.amount > 0 ? '+' : ''}₹{Math.abs(transaction.amount).toLocaleString()}
               </Text>
             </View>
           ))}
@@ -497,6 +620,119 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: '#FF6B6B',
   },
+  
+  // Fuel Left Card Styles
+  fuelCard: {
+    backgroundColor: '#1A202C',
+    marginHorizontal: 20,
+    marginBottom: 24,
+    padding: 20,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#2D3748',
+    borderLeftWidth: 4,
+  },
+  fuelHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  fuelTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  fuelTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginLeft: 8,
+  },
+  fuelStatusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  fuelStatusText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  fuelMainContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  fuelDaysContainer: {
+    alignItems: 'center',
+    marginRight: 24,
+  },
+  fuelDaysNumber: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  fuelDaysLabel: {
+    fontSize: 14,
+    color: '#A0AEC0',
+    fontWeight: '500',
+    marginTop: 4,
+  },
+  fuelGaugeContainer: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  fuelGaugeBackground: {
+    width: '100%',
+    height: 8,
+    backgroundColor: '#2D3748',
+    borderRadius: 4,
+    marginBottom: 8,
+  },
+  fuelGaugeFill: {
+    height: '100%',
+    borderRadius: 4,
+    minWidth: 4,
+  },
+  fuelPercentage: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#CBD5E0',
+  },
+  fuelDetails: {
+    marginBottom: 16,
+  },
+  fuelMessage: {
+    fontSize: 14,
+    color: '#CBD5E0',
+    fontStyle: 'italic',
+    marginBottom: 12,
+  },
+  fuelMetrics: {
+    gap: 8,
+  },
+  fuelMetric: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  fuelMetricText: {
+    fontSize: 12,
+    color: '#A0AEC0',
+    marginLeft: 8,
+    fontWeight: '500',
+  },
+  fuelActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+  },
+  fuelActionText: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginRight: 8,
+  },
+
   balanceCard: {
     backgroundColor: '#1A202C',
     margin: 20,
@@ -505,11 +741,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#2D3748',
   },
+  fiMoneyCardConnected: {
+    borderColor: '#10B981',
+    backgroundColor: '#1A202C',
+  },
   balanceHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
+  },
+  fiMoneyIconConnected: {
+    backgroundColor: '#10B981',
+  },
+  fiMoneyIconDisconnected: {
+    backgroundColor: '#e34c00',
   },
   balanceLabel: {
     fontSize: 14,
@@ -522,6 +768,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     marginBottom: 16,
   },
+  
   budgetRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -544,6 +791,82 @@ const styles = StyleSheet.create({
     backgroundColor: '#e34c00',
     borderRadius: 2,
   },
+  // Witty Status Box Styles
+  wittyStatusCard: {
+    backgroundColor: '#1A202C',
+    marginHorizontal: 20,
+    marginBottom: 24,
+    padding: 20,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#2D3748',
+    borderLeftWidth: 4,
+  },
+  wittyStatusHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  wittyStatusEmoji: {
+    fontSize: 28,
+    marginRight: 12,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 8,
+  },
+  wittyStatusTitleContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  wittyStatusTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  wittyStatusIndicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  wittyStatusText: {
+    color: '#CBD5E0',
+    lineHeight: 20,
+    marginBottom: 16,
+    fontStyle: 'italic',
+  },
+  connectedFeatures: {
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#2D3748',
+    gap: 8,
+  },
+  featureItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  featureText: {
+    fontSize: 12,
+    color: '#10B981',
+    fontWeight: '500',
+  },
+  wittyStatusButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+  },
+  wittyStatusButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginRight: 8,
+  },
+  // Fi Money MCP Connection Styles
   fiMoneyCard: {
     backgroundColor: '#1A202C',
     marginHorizontal: 20,
@@ -553,15 +876,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#2D3748',
   },
-  fiMoneyCardConnected: {
-    borderColor: '#10B981',
-    backgroundColor: '#1A202C',
-  },
   fiMoneyContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   fiMoneyLeft: {
     flexDirection: 'row',
@@ -572,15 +891,10 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
+    backgroundColor: '#e34c00',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
-  },
-  fiMoneyIconConnected: {
-    backgroundColor: '#10B981',
-  },
-  fiMoneyIconDisconnected: {
-    backgroundColor: '#e34c00',
   },
   fiMoneyText: {
     flex: 1,
@@ -597,21 +911,6 @@ const styles = StyleSheet.create({
   },
   fiMoneyArrow: {
     padding: 4,
-  },
-  fiMoneyStatus: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 8,
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: '500',
   },
   fiMoneyBenefits: {
     flexDirection: 'row',
@@ -630,22 +929,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#CBD5E0',
     marginLeft: 6,
-    fontWeight: '500',
-  },
-  connectedFeatures: {
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#2D3748',
-    gap: 8,
-  },
-  featureItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  featureText: {
-    fontSize: 12,
-    color: '#10B981',
     fontWeight: '500',
   },
   quickActionsContainer: {
@@ -775,8 +1058,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 12,
   },
+  statusText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
   transactionDetails: {
     flex: 1,
+  },
+  fiMoneyStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
   },
   transactionDescription: {
     fontSize: 14,
