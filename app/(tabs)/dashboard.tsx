@@ -22,6 +22,25 @@ const Dashboard = () => {
   const [monthlyBudget, setBudgetRemaining] = useState(15000);
   const [isConnected, setIsConnected] = useState(false);
   
+  // Assets and Liabilities data
+  const [assetsData] = useState({
+    total: 125000,
+    breakdown: [
+      { name: 'Savings Account', amount: 45000 },
+      { name: 'Fixed Deposits', amount: 60000 },
+      { name: 'Investments', amount: 20000 }
+    ]
+  });
+
+  const [liabilitiesData] = useState({
+    total: 85000,
+    breakdown: [
+      { name: 'Credit Card Debt', amount: 15000 },
+      { name: 'Personal Loan', amount: 50000 },
+      { name: 'EMIs Pending', amount: 20000 }
+    ]
+  });
+  
   // Sample data - would come from your API/store
   const [categoryData, setCategoryData] = useState({
     wants: { amount: 8500, percentage: 35, color: '#FF6B6B' },
@@ -289,6 +308,7 @@ const Dashboard = () => {
             <Ionicons name="chevron-forward" size={16} color={fuelStatus.color} />
           </TouchableOpacity>
         </View>
+
         {/* Witty Financial Status Box */}
         <View style={[styles.wittyStatusCard, { borderLeftColor: wittyStatement.color }]}>
           <View style={styles.wittyStatusHeader}>
@@ -326,25 +346,60 @@ const Dashboard = () => {
           </View>
         </View>
 
-        {/* Witty Financial Status Box */}
-        {/* <View style={[styles.wittyStatusCard, { borderLeftColor: wittyStatement.color }]}>
-          <View style={styles.wittyStatusHeader}>
-            <Text style={styles.wittyStatusEmoji}>{wittyStatement.emoji}</Text>
-            <View style={styles.wittyStatusTitleContainer}>
-              <Text style={styles.wittyStatusTitle}>Financial Status Report</Text>
-              <View style={[styles.wittyStatusIndicator, { backgroundColor: wittyStatement.color }]} />
+        {/* Assets and Liabilities Cards */}
+        <View style={styles.assetsLiabilitiesContainer}>
+          {/* Assets Card */}
+          <View style={styles.assetsCard}>
+            <View style={styles.assetLiabilityHeader}>
+              <View style={styles.assetLiabilityIconContainer}>
+                <Ionicons name="trending-up" size={20} color="#10B981" />
+              </View>
+              <Text style={styles.assetLiabilityTitle}>Assets</Text>
             </View>
+            
+            <Text style={styles.assetLiabilityAmount}>₹{assetsData.total.toLocaleString()}</Text>
+            
+            <View style={styles.assetLiabilityBreakdown}>
+              {assetsData.breakdown.map((item, index) => (
+                <View key={index} style={styles.breakdownItem}>
+                  <Text style={styles.breakdownName}>{item.name}</Text>
+                  <Text style={styles.breakdownAmount}>₹{item.amount.toLocaleString()}</Text>
+                </View>
+              ))}
+            </View>
+            
+            <TouchableOpacity style={styles.assetLiabilityButton}>
+              <Text style={styles.assetButtonText}>View Details</Text>
+              <Ionicons name="chevron-forward" size={14} color="#10B981" />
+            </TouchableOpacity>
           </View>
-          <Text style={[styles.wittyStatusText, { fontSize: wittyStatement.fontSize }]}>
-            {wittyStatement.text}
-          </Text>
-          <TouchableOpacity style={styles.wittyStatusButton}>
-            <Text style={[styles.wittyStatusButtonText, { color: wittyStatement.color }]}>
-              Get Financial Advice
-            </Text>
-            <Ionicons name="arrow-forward" size={16} color={wittyStatement.color} />
-          </TouchableOpacity>
-        </View> */}
+
+          {/* Liabilities Card */}
+          <View style={styles.liabilitiesCard}>
+            <View style={styles.assetLiabilityHeader}>
+              <View style={[styles.assetLiabilityIconContainer, { backgroundColor: '#FF6B6B' }]}>
+                <Ionicons name="trending-down" size={20} color="#FFFFFF" />
+              </View>
+              <Text style={styles.assetLiabilityTitle}>Liabilities</Text>
+            </View>
+            
+            <Text style={styles.assetLiabilityAmount}>₹{liabilitiesData.total.toLocaleString()}</Text>
+            
+            <View style={styles.assetLiabilityBreakdown}>
+              {liabilitiesData.breakdown.map((item, index) => (
+                <View key={index} style={styles.breakdownItem}>
+                  <Text style={styles.breakdownName}>{item.name}</Text>
+                  <Text style={styles.breakdownAmount}>₹{item.amount.toLocaleString()}</Text>
+                </View>
+              ))}
+            </View>
+            
+            <TouchableOpacity style={styles.assetLiabilityButton}>
+              <Text style={styles.liabilityButtonText}>View Details</Text>
+              <Ionicons name="chevron-forward" size={14} color="#FF6B6B" />
+            </TouchableOpacity>
+          </View>
+        </View>
 
         {/* Fi Money MCP Connection */}
         <TouchableOpacity style={[
@@ -429,7 +484,7 @@ const Dashboard = () => {
         </TouchableOpacity>
 
         {/* Quick Actions */}
-         <View style={styles.quickActionsContainer}>
+        <View style={styles.quickActionsContainer}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           <View style={styles.quickActionsRow}>
             <TouchableOpacity 
@@ -791,6 +846,97 @@ const styles = StyleSheet.create({
     backgroundColor: '#e34c00',
     borderRadius: 2,
   },
+
+  // Assets and Liabilities Styles
+  assetsLiabilitiesContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    marginBottom: 24,
+    gap: 12,
+  },
+  assetsCard: {
+    flex: 1,
+    backgroundColor: '#1A202C',
+    padding: 20,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#2D3748',
+    borderLeftWidth: 4,
+    borderLeftColor: '#10B981',
+  },
+  liabilitiesCard: {
+    flex: 1,
+    backgroundColor: '#1A202C',
+    padding: 20,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#2D3748',
+    borderLeftWidth: 4,
+    borderLeftColor: '#FF6B6B',
+  },
+  assetLiabilityHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  assetLiabilityIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#10B981',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  assetLiabilityTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  assetLiabilityAmount: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 16,
+  },
+  assetLiabilityBreakdown: {
+    marginBottom: 16,
+  },
+  breakdownItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  breakdownName: {
+    fontSize: 12,
+    color: '#A0AEC0',
+    flex: 1,
+  },
+  breakdownAmount: {
+    fontSize: 12,
+    color: '#CBD5E0',
+    fontWeight: '500',
+  },
+  assetLiabilityButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+  },
+  assetButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#10B981',
+    marginRight: 4,
+  },
+  liabilityButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FF6B6B',
+    marginRight: 4,
+  },
+
   // Witty Status Box Styles
   wittyStatusCard: {
     backgroundColor: '#1A202C',
